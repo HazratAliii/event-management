@@ -6,6 +6,7 @@ import {
 import { CreateRegisterDto } from './dto/create-register.dto';
 import { UpdateRegisterDto } from './dto/update-register.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class RegisterService {
@@ -41,6 +42,7 @@ export class RegisterService {
         where: { id: createRegisterDto.eventId },
         data: { attendees: { increment: 1 } },
       });
+      await this.sendVerificationEmail(attendeeExists.email, eventExists.name);
       return registered;
     } catch (error) {
       throw error;
@@ -89,6 +91,35 @@ export class RegisterService {
       return deletedRegister;
     } catch (error) {
       throw error;
+    }
+  }
+
+  // Helper functions
+  async sendVerificationEmail(email: string, eventName: string) {
+    try {
+      const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.GMAIL,
+          pass: process.env.GMAIL_PASSWORD,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.GMAIL,
+        to: email,
+        subject: 'Event registration confirmation',
+        text: `You have registered successfully for the event "${eventName}"`,
+      };
+
+      await transporter.sendMail(mailOptions);
+      console.log('Verification email sent successfully');
+    } catch (error) {
+      console.error('Failed to send verification email:', error.message);
+      throw new Error('Failed to send verification email');
     }
   }
 }
