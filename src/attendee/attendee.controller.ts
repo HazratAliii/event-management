@@ -10,6 +10,7 @@ import {
   ConflictException,
   NotFoundException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { AttendeeService } from './attendee.service';
 import { CreateAttendeeDto } from './dto/create-attendee.dto';
@@ -50,6 +51,8 @@ export class AttendeeController {
     } catch (error) {
       if (error instanceof ConflictException) {
         return res.status(409).json({ message: error.message, stausCode: 409 });
+      } else if (error instanceof BadRequestException) {
+        return res.status(400).json({ message: error.message, stausCode: 400 });
       }
       return res.status(500).json({ message: error.message, statusCode: 500 });
     }

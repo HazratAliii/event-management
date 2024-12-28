@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -6,6 +7,7 @@ import {
 import { CreateAttendeeDto } from './dto/create-attendee.dto';
 import { UpdateAttendeeDto } from './dto/update-attendee.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import axios from 'axios';
 
 @Injectable()
 export class AttendeeService {
@@ -20,6 +22,9 @@ export class AttendeeService {
         throw new ConflictException(
           'An attendee with this email already exists',
         );
+      const isValidEmail = await this.validateEmail(createAttendeeDto.email);
+      if (isValidEmail !== 'valid')
+        throw new BadRequestException('Please provide a valid email');
       const attendee = await this.prisma.attendee.create({
         data: {
           name: createAttendeeDto.name,
@@ -81,6 +86,18 @@ export class AttendeeService {
       return this.prisma.attendee.delete({ where: { id } });
     } catch (error) {
       throw error;
+    }
+  }
+  //Helper functions
+  async validateEmail(email: string) {
+    const zeroBounchApiKey = '1b77d2f6542b433192f5a0de86597ca8';
+    const url = `https://api.zerobounce.net/v2/validate?api_key=${zeroBounchApiKey}&email=${email}`;
+    try {
+      const res = await axios.get(url);
+      return res.data.status;
+    } catch (error) {
+      console.log(`Error validating email: ${error.message}`);
+      return null;
     }
   }
 }
