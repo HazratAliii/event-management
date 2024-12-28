@@ -7,10 +7,14 @@ import { CreateRegisterDto } from './dto/create-register.dto';
 import { UpdateRegisterDto } from './dto/update-register.dto';
 import { PrismaService } from 'prisma/prisma.service';
 import * as nodemailer from 'nodemailer';
+import { EventsGateway } from 'src/event/event.gateway';
 
 @Injectable()
 export class RegisterService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventsGatewy: EventsGateway,
+  ) {}
   async create(createRegisterDto: CreateRegisterDto) {
     try {
       const eventExists = await this.prisma.event.findUnique({
@@ -42,6 +46,10 @@ export class RegisterService {
         where: { id: createRegisterDto.eventId },
         data: { attendees: { increment: 1 } },
       });
+      const remainingSpots = eventExists.maxAttendees - eventExists.attendees;
+      if (remainingSpots <= 6) {
+        this.eventsGatewy.notifySpotsFillingUp(eventExists.id, remainingSpots);
+      }
       await this.sendVerificationEmail(attendeeExists.email, eventExists.name);
       return registered;
     } catch (error) {
@@ -116,7 +124,7 @@ export class RegisterService {
       };
 
       await transporter.sendMail(mailOptions);
-      console.log('Verification email sent successfully');
+      // console.log('Verification email sent successfully');
     } catch (error) {
       console.error('Failed to send verification email:', error.message);
       throw new Error('Failed to send verification email');

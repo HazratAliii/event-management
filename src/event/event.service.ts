@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { PrismaService } from 'prisma/prisma.service';
+import { EventsGateway } from './event.gateway';
 
 @Injectable()
 export class EventService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventsGateway: EventsGateway,
+  ) {}
   async create(createEventDto: CreateEventDto) {
     try {
       const event = await this.prisma.event.create({
@@ -17,6 +21,7 @@ export class EventService {
           maxAttendees: createEventDto.maxAttendees,
         },
       });
+      this.eventsGateway.notifyNewEvent(event);
       return event;
     } catch (error) {
       throw error;

@@ -4,6 +4,7 @@ import { EventController } from './event.controller';
 import { PrismaService } from 'prisma/prisma.service';
 import { CacheModule } from '@nestjs/cache-manager';
 import * as redisStore from 'cache-manager-ioredis';
+import { EventsGateway } from './event.gateway';
 
 @Module({
   imports: [
@@ -15,6 +16,6 @@ import * as redisStore from 'cache-manager-ioredis';
     }),
   ],
   controllers: [EventController],
-  providers: [EventService, PrismaService],
+  providers: [EventService, PrismaService, EventsGateway],
 })
 export class EventModule {}
