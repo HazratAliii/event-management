@@ -9,16 +9,21 @@ import {
   Res,
   NotFoundException,
   ConflictException,
+  Inject,
 } from '@nestjs/common';
 import { RegisterService } from './register.service';
 import { CreateRegisterDto } from './dto/create-register.dto';
 import { UpdateRegisterDto } from './dto/update-register.dto';
 import { Response } from 'express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Cache } from 'cache-manager';
 
 @Controller('api/register')
 export class RegisterController {
-  constructor(private readonly registerService: RegisterService) {}
+  constructor(
+    private readonly registerService: RegisterService,
+    @Inject('CACHE_MANAGER') private readonly cacheManager: Cache,
+  ) {}
 
   @ApiOperation({ summary: 'Register for an event' })
   @ApiResponse({
@@ -70,9 +75,52 @@ export class RegisterController {
     } catch (error) {}
   }
 
+  @ApiOperation({ summary: 'List of attendees for an event' })
+  @ApiResponse({
+    status: 200,
+    description: 'All the attendees for this event',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Event not found',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error',
+  })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.registerService.findOne(id);
+  async findOne(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const cacheKey = `event_${id}_attendees`;
+      const cachedData = await this.cacheManager.get(cacheKey);
+
+      if (cachedData) {
+        return res.status(200).json({
+          message: 'All the attendees for this event (cached)',
+          data: cachedData,
+          statusCode: 200,
+        });
+      }
+      const result = await this.registerService.findOne(id);
+
+      if (!result) {
+        throw new NotFoundException('Event not found');
+      }
+      await this.cacheManager.set(cacheKey, result, 600);
+
+      return res.status(200).json({
+        message: 'All the attendees for this event',
+        data: result,
+        statusCode: 200,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res
+          .status(404)
+          .json({ message: error.message, statusCode: 404 });
+      }
+      return res.status(500).json({ message: error.message, statusCode: 500 });
+    }
   }
 
   @Patch(':id')

@@ -9,16 +9,21 @@ import {
   Res,
   ConflictException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 import { AttendeeService } from './attendee.service';
 import { CreateAttendeeDto } from './dto/create-attendee.dto';
 import { UpdateAttendeeDto } from './dto/update-attendee.dto';
 import { Response } from 'express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Cache } from 'cache-manager';
 
-@Controller('attendee')
+@Controller('api/attendee')
 export class AttendeeController {
-  constructor(private readonly attendeeService: AttendeeService) {}
+  constructor(
+    private readonly attendeeService: AttendeeService,
+    @Inject('CACHE_MANAGER') private readonly cacheManager: Cache,
+  ) {}
 
   @ApiOperation({ summary: 'Create an attendee' })
   @ApiResponse({
@@ -62,7 +67,18 @@ export class AttendeeController {
   @Get()
   async findAll(@Res() res: Response) {
     try {
+      const cachedData = await this.cacheManager.get('attendees_all');
+
+      if (cachedData) {
+        return res.status(200).json({
+          message: 'All attendees (cached)',
+          data: cachedData,
+          statusCode: 200,
+        });
+      }
       const result = await this.attendeeService.findAll();
+
+      await this.cacheManager.set('attendees_all', result, 600);
       return res.status(200).json({
         message: 'All attendees',
         data: result,
