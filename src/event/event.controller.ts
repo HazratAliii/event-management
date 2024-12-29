@@ -15,7 +15,6 @@ import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Response } from 'express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-// import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 
 @Controller('api/event')
@@ -84,21 +83,6 @@ export class EventController {
   })
   @Get(':id')
   async findOne(@Param('id') id: string, @Res() res: Response) {
-    // try {
-    //   const result = await this.eventService.findOne(id);
-    //   return res.status(200).json({
-    //     message: 'Event details',
-    //     data: result,
-    //     statusCode: 200,
-    //   });
-    // } catch (error) {
-    //   if (error instanceof NotFoundException) {
-    //     return res
-    //       .status(404)
-    //       .json({ message: error.message, statusCode: 404 });
-    //   }
-    //   return res.status(500).json({ message: error.message, statusCode: 500 });
-    // }
     try {
       const cacheKey = `event:${id}`;
       let result = await this.cacheManager.get(cacheKey);
@@ -108,7 +92,7 @@ export class EventController {
         if (!result) {
           throw new NotFoundException('Event not found');
         }
-        await this.cacheManager.set(cacheKey, result, 600);
+        await this.cacheManager.set(cacheKey, result, 3600);
       }
 
       return res.status(200).json({
