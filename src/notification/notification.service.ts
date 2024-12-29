@@ -7,15 +7,13 @@ export class NotificationService {
   constructor(private readonly prisma: PrismaService) {}
 
   async notifyUpcomingEvents() {
-    console.log('Inside cron notification');
-    const oneHourFromNow = new Date();
-    oneHourFromNow.setHours(oneHourFromNow.getHours() + 1);
+    const twentyFourHoursFromNow = new Date();
+    twentyFourHoursFromNow.setHours(twentyFourHoursFromNow.getHours() + 24);
 
-    // Find events starting in the next hour
     const upcomingEvents = await this.prisma.event.findMany({
       where: {
         date: {
-          lte: oneHourFromNow,
+          lte: twentyFourHoursFromNow,
           gte: new Date(),
         },
       },

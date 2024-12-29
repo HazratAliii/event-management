@@ -11,12 +11,13 @@ import {
   NotFoundException,
   Inject,
   BadRequestException,
+  Query,
 } from '@nestjs/common';
 import { AttendeeService } from './attendee.service';
 import { CreateAttendeeDto } from './dto/create-attendee.dto';
 import { UpdateAttendeeDto } from './dto/update-attendee.dto';
 import { Response } from 'express';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Cache } from 'cache-manager';
 
 @Controller('api/attendee')
@@ -67,6 +68,26 @@ export class AttendeeController {
     status: 500,
     description: 'Internal server error',
   })
+  @ApiOperation({ summary: 'Search attendees by name or email' })
+  @ApiQuery({
+    name: 'query',
+    required: true,
+    type: String,
+    description: 'Search query for name or email',
+  })
+  @Get('/search')
+  async searchAttendees(@Query('query') query: string, @Res() res: Response) {
+    try {
+      return this.attendeeService.searchAttendees(query);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res
+          .status(404)
+          .json({ message: error.message, statusCode: 404 });
+      }
+      console.log(error);
+    }
+  }
   @Get()
   async findAll(@Res() res: Response) {
     try {

@@ -77,4 +77,20 @@ export class EventService {
       throw error;
     }
   }
+
+  async eventWithpMostAttendees() {
+    try {
+      const events = await this.prisma.event.findMany({
+        orderBy: {
+          attendees: 'desc',
+        },
+        take: 1,
+      });
+      console.log(events);
+      if (events.length === 0) throw new NotFoundException('Event not found');
+      return events[0];
+    } catch (error) {
+      throw error;
+    }
+  }
 }

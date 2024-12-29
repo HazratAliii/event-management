@@ -16,7 +16,7 @@ Before you begin, ensure that you have the following installed:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/event-management.git
+   git clone https://github.com/HazratAliii/event-management.git
    cd event-management
    ```
 2. Install dependencies: Using npm:
@@ -60,4 +60,5 @@ yarn start:dev
 
 ### you will find the api documentation at
 
-http://localhost:(yourport)/api
+http://localhost:(yourport)/api for instance if your port is 5000 the route will look like this
+http://localhost:5000/api

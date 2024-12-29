@@ -6,7 +6,7 @@ import { NotificationService } from './notification.service';
 export class NotificationTask {
   constructor(private readonly notificationService: NotificationService) {}
 
-  @Cron('*/1 * * * *')
+  @Cron('0 0 * * *')
   async handleCron() {
     console.log('Cron is running');
     await this.notificationService.notifyUpcomingEvents();

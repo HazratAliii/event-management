@@ -3,17 +3,16 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Res,
   NotFoundException,
   ConflictException,
   Inject,
+  BadRequestException,
 } from '@nestjs/common';
 import { RegisterService } from './register.service';
 import { CreateRegisterDto } from './dto/create-register.dto';
-import { UpdateRegisterDto } from './dto/update-register.dto';
 import { Response } from 'express';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Cache } from 'cache-manager';
@@ -63,16 +62,13 @@ export class RegisterController {
         return res
           .status(409)
           .json({ message: error.message, statusCode: 409 });
+      } else if (error instanceof BadRequestException) {
+        return res
+          .status(400)
+          .json({ message: error.message, statusCode: 400 });
       }
       return res.status(500).json({ message: error.message, statusCode: 500 });
     }
-  }
-
-  @Get()
-  async findAll() {
-    try {
-      const result = await this.registerService.findAll();
-    } catch (error) {}
   }
 
   @ApiOperation({ summary: 'List of attendees for an event' })
@@ -121,14 +117,6 @@ export class RegisterController {
       }
       return res.status(500).json({ message: error.message, statusCode: 500 });
     }
-  }
-
-  @Patch(':id')
-  update(
-    @Param('id') id: string,
-    @Body() updateRegisterDto: UpdateRegisterDto,
-  ) {
-    return this.registerService.update(+id, updateRegisterDto);
   }
 
   @ApiOperation({ summary: 'Cancel a registration' })

@@ -48,6 +48,27 @@ export class EventController {
     }
   }
 
+  @ApiOperation({ summary: 'Create an Event' })
+  @Get('/most-attendees')
+  async eventWithMostAttendees(@Res() res: Response) {
+    try {
+      console.log('inside most');
+      const result = await this.eventService.eventWithpMostAttendees();
+      return res.status(201).json({
+        message: 'Event with most attendees',
+        data: result,
+        statusCode: 200,
+      });
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res
+          .status(404)
+          .json({ message: error.message, statusCode: 404 });
+      }
+      return res.status(500).json({ message: error.message, statusCode: 500 });
+    }
+  }
+
   @ApiOperation({ summary: 'Get All events' })
   @ApiResponse({
     status: 200,
@@ -131,10 +152,18 @@ export class EventController {
     @Res() res: Response,
   ) {
     try {
-      const result = await this.eventService.update(id, updateEventDto);
+      const cacheKey = `event:${id}`;
+      const updatedEvent = await this.eventService.update(id, updateEventDto);
+
+      if (!updatedEvent) {
+        throw new NotFoundException('Event not found');
+      }
+
+      await this.cacheManager.del(cacheKey);
+
       return res.status(200).json({
-        message: 'Event details updated',
-        data: result,
+        message: 'Event updated',
+        data: updatedEvent,
         statusCode: 200,
       });
     } catch (error) {
@@ -163,7 +192,15 @@ export class EventController {
   @Delete(':id')
   async remove(@Param('id') id: string, @Res() res: Response) {
     try {
+      const cacheKey = `event:${id}`;
       const result = await this.eventService.remove(id);
+
+      if (!result) {
+        throw new NotFoundException('Event not found');
+      }
+
+      await this.cacheManager.del(cacheKey);
+
       return res.status(200).json({
         message: 'Event deleted',
         data: result,

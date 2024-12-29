@@ -88,9 +88,33 @@ export class AttendeeService {
       throw error;
     }
   }
+  async searchAttendees(query: string) {
+    try {
+      console.log('inside search');
+      console.log(`trim ${query}`);
+      const trimmedQuery = query.trim(); // Remove any extra spaces
+      const attendees = await this.prisma.attendee.findMany({
+        where: {
+          OR: [
+            { name: { contains: trimmedQuery, mode: 'insensitive' } },
+            { email: { contains: trimmedQuery, mode: 'insensitive' } },
+          ],
+        },
+      });
+      if (!attendees || attendees.length === 0) {
+        throw new NotFoundException('Attendees not found');
+      }
+      console.log(attendees);
+      return attendees;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   //Helper functions
   async validateEmail(email: string) {
-    const zeroBounchApiKey = '1b77d2f6542b433192f5a0de86597ca8';
+    const zeroBounchApiKey = process.env.ZERO_BOUNCE_API_KEY;
+    console.log(zeroBounchApiKey);
     const url = `https://api.zerobounce.net/v2/validate?api_key=${zeroBounchApiKey}&email=${email}`;
     try {
       const res = await axios.get(url);

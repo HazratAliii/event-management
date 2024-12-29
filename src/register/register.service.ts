@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -34,7 +35,8 @@ export class RegisterService {
       if (!eventExists) throw new NotFoundException('Event not found');
       if (!attendeeExists) throw new NotFoundException('Attendee not found');
       if (registrationExists) throw new ConflictException('Alreday registered');
-
+      if (eventExists.attendees === eventExists.maxAttendees)
+        throw new BadRequestException('No seat available');
       const registered = await this.prisma.registration.create({
         data: {
           eventId: createRegisterDto.eventId,
